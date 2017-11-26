@@ -72,6 +72,7 @@ double max_track_error;
 std::string cam_image_topic;
 std::string cam_info_topic;
 std::string output_frame;
+std::string marker_frame_prefix;
 int marker_resolution = 5; // default marker resolution
 int marker_margin = 2; // default marker margin
 
@@ -81,17 +82,20 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg);
 void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
     //If we've already gotten the cam info, then go ahead
+  if (output_frame_from_msg)
+    output_frame = msg->header.frame_id;
+
 	if(cam->getCamInfo_){
 		try{
-			tf::StampedTransform CamToOutput;
-    			try{
-					tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
-					tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
-   				}
-    			catch (tf::TransformException ex){
-      				ROS_ERROR("%s",ex.what());
-    			}
 
+		  tf::StampedTransform CamToOutput;
+		  try{
+				  tf_listener->waitForTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, ros::Duration(1.0));
+				  tf_listener->lookupTransform(output_frame, image_msg->header.frame_id, image_msg->header.stamp, CamToOutput);
+			  }
+		  catch (tf::TransformException ex){
+			  ROS_ERROR("%s",ex.what());
+		  }
 
             //Convert the image
             cv_ptr_ = cv_bridge::toCvCopy(image_msg, sensor_msgs::image_encodings::BGR8);
@@ -134,7 +138,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
                 }
 
 				//Publish the transform from the camera to the marker
-				std::string markerFrame = "ar_marker_";
+				std::string markerFrame = marker_frame_prefix;
 				std::stringstream out;
 				out << id;
 				std::string id_string = out.str();
@@ -278,8 +282,12 @@ int main(int argc, char *argv[])
     pn.setParam("max_frequency", max_frequency);  // in case it was not set.
     pn.param("marker_resolution", marker_resolution, 5);
     pn.param("marker_margin", marker_margin, 2);
-    if (!pn.getParam("output_frame", output_frame)) {
-      ROS_ERROR("Param 'output_frame' has to be set.");
+    pn.param("output_frame_from_msg", output_frame_from_msg, false);
+    pn.param("marker_frame_prefix", marker_frame_prefix, "ar_marker_");
+
+    if (!output_frame_from_msg && !pn.getParam("output_frame", output_frame)) {
+      ROS_ERROR("Param 'output_frame' has to be set if the output frame is not "
+                "derived from the point cloud message.");
       exit(EXIT_FAILURE);
     }
 
@@ -296,7 +304,10 @@ int main(int argc, char *argv[])
 	marker_detector.SetMarkerSize(marker_size, marker_resolution, marker_margin);
 
 	cam = new Camera(n, cam_info_topic);
-	tf_listener = new tf::TransformListener(n);
+	if (!output_frame_from_msg) {
+	  // TF listener is only required when output frame != camera frame.
+	  tf_listener = new tf::TransformListener(n);
+	}
 	tf_broadcaster = new tf::TransformBroadcaster();
 	arMarkerPub_ = n.advertise < ar_track_alvar_msgs::AlvarMarkers > ("ar_pose_marker", 0);
 	rvizMarkerPub_ = n.advertise < visualization_msgs::Marker > ("visualization_marker", 0);

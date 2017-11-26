@@ -83,6 +83,7 @@ double max_track_error;
 std::string cam_image_topic;
 std::string cam_info_topic;
 std::string output_frame;
+std::string marker_frame_prefix;
 int marker_resolution = 5; // default marker resolution
 int marker_margin = 2; // default marker margin
 
@@ -392,7 +393,7 @@ void getPointCloudCallback (const sensor_msgs::PointCloud2ConstPtr &msg)
       tf::Transform markerPose = t * m; // marker pose in the camera frame
 
 	  //Publish the transform from the camera to the marker
-	  std::string markerFrame = "ar_marker_";
+	  std::string markerFrame = marker_frame_prefix;
 	  std::stringstream out;
 	  out << id;
 	  std::string id_string = out.str();
@@ -532,6 +533,7 @@ int main(int argc, char *argv[])
     pn.param("marker_resolution", marker_resolution, 5);
     pn.param("marker_margin", marker_margin, 2);
     pn.param("output_frame_from_msg", output_frame_from_msg, false);
+    pn.param("marker_frame_prefix", marker_frame_prefix, "ar_marker_");
 
     if (!output_frame_from_msg && !pn.getParam("output_frame", output_frame)) {
       ROS_ERROR("Param 'output_frame' has to be set if the output frame is not "
