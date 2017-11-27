@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
     pn.param("marker_resolution", marker_resolution, 5);
     pn.param("marker_margin", marker_margin, 2);
     pn.param("output_frame_from_msg", output_frame_from_msg, false);
-    pn.param("marker_frame_prefix", marker_frame_prefix, "ar_marker_");
+    pn.param<std::string>("marker_frame_prefix", marker_frame_prefix, "ar_marker_");
 
     if (!output_frame_from_msg && !pn.getParam("output_frame", output_frame)) {
       ROS_ERROR("Param 'output_frame' has to be set if the output frame is not "
