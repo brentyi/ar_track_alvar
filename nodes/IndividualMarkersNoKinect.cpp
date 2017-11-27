@@ -84,7 +84,7 @@ void getCapCallback (const sensor_msgs::ImageConstPtr & image_msg)
 {
     //If we've already gotten the cam info, then go ahead
   if (output_frame_from_msg)
-    output_frame = msg->header.frame_id;
+    output_frame = image_msg->header.frame_id;
 
 	if(cam->getCamInfo_){
 		try{
