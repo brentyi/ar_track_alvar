@@ -65,6 +65,7 @@ MarkerDetector<MarkerData> marker_detector;
 
 bool enableSwitched = false;
 bool enabled = true;
+bool output_frame_from_msg;
 double max_frequency;
 double marker_size;
 double max_new_marker_error;
